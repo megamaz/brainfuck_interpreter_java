@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Stack;
 import java.util.HashMap;
 import java.io.IOException;
@@ -11,7 +13,7 @@ public class Interpreter {
     private HashMap<Integer, Integer> bracket_indexes;
     private boolean viewmemory;
     private ArrayList<Integer> cells;
-    private int p;
+    private int pointer;
     
     // memory viewer variables
     int max_ind = 0;
@@ -41,67 +43,84 @@ public class Interpreter {
     }
 
     public void interpret() throws Exception {
-        p = 0;
+        pointer = 0;
         int i = 0;
         cells.add(0);
         while(i < code.length()) {
             char c = code.charAt(i);
             if(c == '>') {
-                p++;
-                if(p == cells.size())
+                pointer++;
+                if(pointer == cells.size())
                     cells.add(0);
             }
             else if(c == '<') {
-                p--;
-                if(p == -1)
+                pointer--;
+                if(pointer == -1)
                     throw new IndexOutOfBoundsException("p managed to get to -1");
             }
 
             else if(c == '+')
-                cells.set(p, (cells.get(p)+1)%256);
+                cells.set(pointer, (cells.get(pointer)+1)%256);
             else if(c == '-') {
-                cells.set(p, cells.get(p)-1);
-                if(cells.get(p) == -1)
-                    cells.set(p, 0);
+                cells.set(pointer, cells.get(pointer)-1);
+                if(cells.get(pointer) == -1)
+                    cells.set(pointer, 0);
             }
 
-            else if(c == '[' && cells.get(p) == 0) {
+            else if(c == '[' && cells.get(pointer) == 0) {
                 i = bracket_indexes.get(i);    
             }
-            else if(c == ']' && cells.get(p) != 0) {
+            else if(c == ']' && cells.get(pointer) != 0) {
                 i = bracket_indexes.get(i);
             }
             
             else if(c == '.' && !viewmemory)
-                System.out.print((char)(int)cells.get(p)); // casting Integer to int to char :tf:
+                System.out.print((char)(int)cells.get(pointer)); // casting Integer to int to char :tf:
 
             i++;
 
             if(viewmemory)
                 viewMemory();
         }
+        if(viewmemory) {
+            File finalmemory = new File("finalmem.txt");
+            finalmemory.createNewFile(); // i know im ignoring the result, but idc about the result
+            FileWriter writer = new FileWriter(finalmemory);
+            for (int j = 0; j < cells.size(); j++) {
+                String v = Integer.toHexString(cells.get(j));
+                if(v.length() == 1) v = "0" + v;
+                if (j == pointer) 
+                    v = ">" + v + "<";
+                else
+                    v = " " + v + " ";
+                
+                writer.write(v);
+            }
+            writer.close();
+        }
+        
     }
 
     public void viewMemory() throws Exception {
-        max_ind = Math.max(max_ind, p);
-        min_ind = Math.min(min_ind, p);
+        max_ind = Math.max(max_ind, pointer);
+        min_ind = Math.min(min_ind, pointer);
         
-        if(p <= max_ind - 40)
+        if(pointer <= max_ind - 40)
             max_ind --;
-        if(p >= min_ind + 40)
+        if(pointer >= min_ind + 40)
             min_ind ++;
         String outString = "";
         for(int j = min_ind; j < max_ind+1; j++) {
             String v = Integer.toHexString(cells.get(j));
             if(v.length() == 1)
                 v = "0" + v;
-            if(j != p)
+            if(j != pointer)
                 outString += " " + v + " ";
             else
                 outString += ">" + v + "<";
         }
         System.out.print("\r" + outString);
-        Thread.sleep(50);
+        Thread.sleep(15);
     }
 
 }
