@@ -21,6 +21,9 @@ public class Interpreter {
 
 
     public Interpreter(String filepath) throws IOException {
+        // without withmemoryviewer, it defaults to false (because it isn't being set)
+        // you can call the constructor and set it to false manually, but idk why you'd
+        // do that
         this.code = Files.readString(Paths.get(filepath));
         this.bracket_indexes = new HashMap<>();
         Stack<Integer> temp_brackets = new Stack<>();
@@ -58,7 +61,6 @@ public class Interpreter {
                 if(pointer == -1)
                     throw new IndexOutOfBoundsException("p managed to get to -1");
             }
-
             else if(c == '+')
                 cells.set(pointer, (cells.get(pointer)+1)%256);
             else if(c == '-') {
@@ -66,14 +68,12 @@ public class Interpreter {
                 if(cells.get(pointer) == -1)
                     cells.set(pointer, 0);
             }
-
             else if(c == '[' && cells.get(pointer) == 0) {
                 i = bracket_indexes.get(i);    
             }
             else if(c == ']' && cells.get(pointer) != 0) {
                 i = bracket_indexes.get(i);
             }
-            
             else if(c == '.' && !viewmemory)
                 System.out.print((char)(int)cells.get(pointer)); // casting Integer to int to char :tf:
 
@@ -82,6 +82,7 @@ public class Interpreter {
             if(viewmemory)
                 viewMemory();
         }
+
         if(viewmemory) {
             File finalmemory = new File("finalmem.txt");
             finalmemory.createNewFile(); // i know im ignoring the result, but idc about the result
@@ -98,10 +99,9 @@ public class Interpreter {
             }
             writer.close();
         }
-        
     }
 
-    public void viewMemory() throws Exception {
+    private void viewMemory() throws Exception {
         max_ind = Math.max(max_ind, pointer);
         min_ind = Math.min(min_ind, pointer);
         
@@ -122,5 +122,4 @@ public class Interpreter {
         System.out.print("\r" + outString);
         Thread.sleep(15);
     }
-
 }
