@@ -27,8 +27,8 @@ public class Interpreter {
         this.code = Files.readString(Paths.get(filepath));
         this.bracket_indexes = new HashMap<>();
         Stack<Integer> temp_brackets = new Stack<>();
-        for(int i = 0; i < code.length(); i++) {
-            char c = code.charAt(i);
+        for(int i = 0; i < this.code.length(); i++) {
+            char c = this.code.charAt(i);
             if(c == '[')
                 temp_brackets.add(i);
             else if(c == ']') {
@@ -37,7 +37,7 @@ public class Interpreter {
                 this.bracket_indexes.put(i, first);
             }
         }
-        cells = new ArrayList<>();
+        this.cells = new ArrayList<>();
     }
 
     public Interpreter(String filepath, boolean withmemoryviewer) throws IOException {
@@ -46,51 +46,51 @@ public class Interpreter {
     }
 
     public void interpret() throws Exception {
-        pointer = 0;
+        this.pointer = 0;
         int i = 0;
-        cells.add(0);
-        while(i < code.length()) {
-            char c = code.charAt(i);
+        this.cells.add(0);
+        while(i < this.code.length()) {
+            char c = this.code.charAt(i);
             if(c == '>') {
-                pointer++;
-                if(pointer == cells.size())
-                    cells.add(0);
+                this.pointer++;
+                if(this.pointer == this.cells.size())
+                    this.cells.add(0);
             }
             else if(c == '<') {
-                pointer--;
-                if(pointer == -1)
+                this.pointer--;
+                if(this.pointer == -1)
                     throw new IndexOutOfBoundsException("p managed to get to -1");
             }
             else if(c == '+')
-                cells.set(pointer, (cells.get(pointer)+1)%256);
+                this.cells.set(this.pointer, (this.cells.get(this.pointer)+1)%256);
             else if(c == '-') {
-                cells.set(pointer, cells.get(pointer)-1);
-                if(cells.get(pointer) == -1)
-                    cells.set(pointer, 0);
+                this.cells.set(this.pointer, this.cells.get(this.pointer)-1);
+                if(this.cells.get(this.pointer) == -1)
+                    this.cells.set(this.pointer, 0);
             }
-            else if(c == '[' && cells.get(pointer) == 0) {
+            else if(c == '[' && this.cells.get(this.pointer) == 0) {
                 i = bracket_indexes.get(i);    
             }
-            else if(c == ']' && cells.get(pointer) != 0) {
+            else if(c == ']' && this.cells.get(this.pointer) != 0) {
                 i = bracket_indexes.get(i);
             }
-            else if(c == '.' && !viewmemory)
-                System.out.print((char)(int)cells.get(pointer)); // casting Integer to int to char :tf:
+            else if(c == '.' && !this.viewmemory)
+                System.out.print((char)(int)this.cells.get(this.pointer)); // casting Integer to int to char :tf:
 
             i++;
 
-            if(viewmemory)
-                viewMemory();
+            if(this.viewmemory)
+                viewmemory();
         }
 
-        if(viewmemory) {
+        if(this.viewmemory) {
             File finalmemory = new File("finalmem.txt");
             finalmemory.createNewFile(); // i know im ignoring the result, but idc about the result
             FileWriter writer = new FileWriter(finalmemory);
-            for (int j = 0; j < cells.size(); j++) {
-                String v = Integer.toHexString(cells.get(j));
+            for (int j = 0; j < this.cells.size(); j++) {
+                String v = Integer.toHexString(this.cells.get(j));
                 if(v.length() == 1) v = "0" + v;
-                if (j == pointer) 
+                if (j == this.pointer) 
                     v = ">" + v + "<";
                 else
                     v = " " + v + " ";
@@ -101,20 +101,20 @@ public class Interpreter {
         }
     }
 
-    private void viewMemory() throws Exception {
-        max_ind = Math.max(max_ind, pointer);
-        min_ind = Math.min(min_ind, pointer);
+    private void viewmemory() throws Exception {
+        max_ind = Math.max(max_ind, this.pointer);
+        min_ind = Math.min(min_ind, this.pointer);
         
-        if(pointer <= max_ind - 40)
+        if(this.pointer <= max_ind - 40)
             max_ind --;
-        if(pointer >= min_ind + 40)
+        if(this.pointer >= min_ind + 40)
             min_ind ++;
         String outString = "";
         for(int j = min_ind; j < max_ind+1; j++) {
-            String v = Integer.toHexString(cells.get(j));
+            String v = Integer.toHexString(this.cells.get(j));
             if(v.length() == 1)
                 v = "0" + v;
-            if(j != pointer)
+            if(j != this.pointer)
                 outString += " " + v + " ";
             else
                 outString += ">" + v + "<";
