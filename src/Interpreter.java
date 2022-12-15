@@ -25,6 +25,18 @@ public class Interpreter {
         // you can call the constructor and set it to false manually, but idk why you'd
         // do that
         this.code = Files.readString(Paths.get(filepath));
+        //region filter comments from code
+        String actualcode = "";
+        char[] validchars = new char[] {'[', ']', '<', '>', '+', '-', '.', ','};
+        for (int i = 0; i < this.code.length(); i++) {
+            // odd way to check if an array contains an item
+            // from stackoverflow: https://stackoverflow.com/questions/18581531/in-java-how-can-i-determine-if-a-char-array-contains-a-particular-character
+            if(new String(validchars).indexOf(this.code.charAt(i)) != -1) {
+                actualcode += Character.toString(this.code.charAt(i));
+            }
+        }
+        this.code = actualcode;
+        //endregion
         this.bracket_indexes = new HashMap<>();
         Stack<Integer> temp_brackets = new Stack<>();
         for(int i = 0; i < this.code.length(); i++) {
