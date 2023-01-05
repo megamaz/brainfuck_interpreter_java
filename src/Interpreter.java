@@ -57,7 +57,15 @@ public class Interpreter {
         this.viewmemory = withmemoryviewer;
     }
 
+    // again with the one below, this may as well go unused
+    // but the thing is I like having default values, and idk
+    // if that's possible with java parameters
     public void interpret() throws Exception {
+        this.interpret(false);
+    }
+
+    public void interpret(boolean wait) throws Exception {
+        // if wait is true, there'll be a small pause between each instruction if the memory viewer is active
         this.pointer = 0;
         int i = 0;
         this.cells.add(0);
@@ -92,7 +100,7 @@ public class Interpreter {
             i++;
 
             if(this.viewmemory)
-                viewmemory();
+                viewmemory(wait);
         }
 
         if(this.viewmemory) {
@@ -112,8 +120,13 @@ public class Interpreter {
             writer.close();
         }
     }
-
+    
+    // yes, this goes unused, but you never know
     private void viewmemory() throws Exception {
+        this.viewmemory(false);
+    }
+
+    private void viewmemory(boolean wait) throws Exception {
         max_ind = Math.max(max_ind, this.pointer);
         min_ind = Math.min(min_ind, this.pointer);
         
@@ -132,6 +145,8 @@ public class Interpreter {
                 outString += ">" + v + "<";
         }
         System.out.print("\r" + outString);
-        Thread.sleep(15);
+
+        if(wait)
+            Thread.sleep(15);
     }
 }
