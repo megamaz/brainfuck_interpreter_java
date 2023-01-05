@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.Stack;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -96,6 +97,17 @@ public class Interpreter {
             }
             else if(c == '.' && !this.viewmemory)
                 System.out.print((char)(int)this.cells.get(this.pointer)); // casting Integer to int to char :tf:
+            else if(c == ',' && !this.viewmemory) {
+                // the memory viewer banning the input may break some programs
+                // however allowing input with the memory viewer would make the
+                // memory viewer look ugly... not sure how to fix this. FIXME
+                Scanner scan = new Scanner(System.in);
+                System.out.print("\n> ");
+                char val = scan.nextLine().charAt(0);
+                scan.close();
+                this.cells.set(this.pointer, (int)val);
+                System.out.println();
+            }
 
             i++;
 
@@ -121,7 +133,7 @@ public class Interpreter {
         }
     }
     
-    // yes, this goes unused, but you never know
+    // yes, this goes unused, but I like having defaults
     private void viewmemory() throws Exception {
         this.viewmemory(false);
     }
