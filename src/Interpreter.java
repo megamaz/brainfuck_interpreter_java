@@ -87,7 +87,7 @@ public class Interpreter {
             else if(c == '-') {
                 this.cells.set(this.pointer, this.cells.get(this.pointer)-1);
                 if(this.cells.get(this.pointer) == -1)
-                    this.cells.set(this.pointer, 0);
+                    this.cells.set(this.pointer, 255);
             }
             else if(c == '[' && this.cells.get(this.pointer) == 0) {
                 i = bracket_indexes.get(i);    
