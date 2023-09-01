@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.Stack;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Scanner;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +14,7 @@ public class Interpreter {
     public String code;
     private HashMap<Integer, Integer> bracket_indexes;
     private boolean viewmemory;
+    private boolean startwithrandommem;
     private ArrayList<Integer> cells;
     private int pointer;
     
@@ -51,6 +53,16 @@ public class Interpreter {
             }
         }
         this.cells = new ArrayList<>();
+    }
+
+    public Interpreter(String filepath, boolean withmemoryviewer, boolean startwithrandommem) throws IOException {
+        this(filepath, withmemoryviewer);
+        if(startwithrandommem) { // this has no reaon to be false
+            Random rand = new Random();
+            for (int i = 0; i < 100; i++) {
+                cells.add(rand.nextInt(255));
+            }
+        }
     }
 
     public Interpreter(String filepath, boolean withmemoryviewer) throws IOException {
@@ -158,7 +170,7 @@ public class Interpreter {
         }
         System.out.print("\r" + outString);
 
-        if(wait)
-            Thread.sleep(15);
+        // if(wait)
+            // Thread.sleep(15);
     }
 }
