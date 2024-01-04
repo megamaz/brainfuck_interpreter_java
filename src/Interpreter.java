@@ -27,7 +27,9 @@ public class Interpreter {
         // without withmemoryviewer, it defaults to false (because it isn't being set)
         // you can call the constructor and set it to false manually, but idk why you'd
         // do that
-        this.code = Files.readString(Paths.get(filepath));
+        for (String c : Files.readAllLines(Paths.get(filepath))) {
+            this.code += c;
+        };
         //region filter comments from code
         String actualcode = "";
         char[] validchars = new char[] {'[', ']', '<', '>', '+', '-', '.', ','};
