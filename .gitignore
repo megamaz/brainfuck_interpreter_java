@@ -1,5 +1,7 @@
 .vscode
 bin
 lib
-brainfuck.bf
+# brainfuck.bf
 finalmem.txt
+output.txt
+verification.txt

@@ -14,14 +14,15 @@ public class Interpreter {
     public String code;
     private HashMap<Integer, Integer> bracket_indexes;
     private boolean viewmemory;
-    private boolean startwithrandommem;
     private ArrayList<Integer> cells;
+    private ArrayList<String> code_blocks;
     private int pointer;
     
     // memory viewer variables
     int max_ind = 0;
     int min_ind = 0;
 
+    String output;
 
     public Interpreter(String filepath) throws IOException {
         // without withmemoryviewer, it defaults to false (because it isn't being set)
@@ -42,10 +43,61 @@ public class Interpreter {
         }
         this.code = actualcode;
         //endregion
+
+        // for faster interpreting, we're going to "compress" the code
+        // this means that we're going to turn ">>>>>>>>>>>>" into a single block
+        // that way instead of interpreting each one as its own instruction, we're going
+        // to interpret each as a big block
+        this.code_blocks = new ArrayList<>();
+        String block = "";
+        for (char c : this.code.toCharArray()) {
+            // we don't want to stack '[' or ']'
+            if (c == '[' || c == ']') {
+                if (!block.equals("")) {
+                    this.code_blocks.add(block);
+                    block = "";
+                }
+                this.code_blocks.add(Character.toString(c));
+                continue;
+            }
+            if (block.equals("")) {
+                block += c;
+                continue;
+            }
+            if (c == block.charAt(block.length() - 1)) {
+                block += c;
+            } else {
+                this.code_blocks.add(block);
+                block = "";
+                block += c;
+            }
+        }
+        if(!block.equals(""))
+            this.code_blocks.add(block);
+
+        // verify code blocks
+        String verify = "";
+        for (String s : this.code_blocks)
+            verify += s;
+        if (!verify.equals(actualcode)) {
+            System.out.println("Code verification failed");
+            File verification = new File("verification.txt");
+            verification.createNewFile();
+            FileWriter writer = new FileWriter(verification);
+            writer.write(actualcode + "\n" + verify);
+            writer.close();
+            System.exit(1);
+        }
+
+        this.output = "";
+        // for faster reader jumping between square brackets, we store their connected indices
+        // a closing bracket will have an index to its opening bracket
+        // this super speeds us up compared to scanning the code backwards until we arrive at 
+        // the connected opening bracket
         this.bracket_indexes = new HashMap<>();
-        Stack<Integer> temp_brackets = new Stack<>();
-        for(int i = 0; i < this.code.length(); i++) {
-            char c = this.code.charAt(i);
+        Stack<Integer> temp_brackets = new Stack<>(); // stacks are cool for this
+        for(int i = 0; i < this.code_blocks.size(); i++) {
+            char c = this.code_blocks.get(i).charAt(0);
             if(c == '[')
                 temp_brackets.add(i);
             else if(c == ']') {
@@ -84,67 +136,102 @@ public class Interpreter {
         this.pointer = 0;
         int i = 0;
         this.cells.add(0);
-        while(i < this.code.length()) {
-            char c = this.code.charAt(i);
-            if(c == '>') {
-                this.pointer++;
-                if(this.pointer == this.cells.size())
-                    this.cells.add(0);
-            }
-            else if(c == '<') {
-                this.pointer--;
-                if(this.pointer == -1)
-                    throw new IndexOutOfBoundsException("p managed to get to -1");
-            }
-            else if(c == '+')
-                this.cells.set(this.pointer, (this.cells.get(this.pointer)+1)%256);
-            else if(c == '-') {
-                this.cells.set(this.pointer, this.cells.get(this.pointer)-1);
-                if(this.cells.get(this.pointer) == -1)
-                    this.cells.set(this.pointer, 255);
-            }
-            else if(c == '[' && this.cells.get(this.pointer) == 0) {
-                i = bracket_indexes.get(i);    
-            }
-            else if(c == ']' && this.cells.get(this.pointer) != 0) {
-                i = bracket_indexes.get(i);
-            }
-            else if(c == '.' && !this.viewmemory)
-                System.out.print((char)(int)this.cells.get(this.pointer)); // casting Integer to int to char :tf:
-            else if(c == ',' && !this.viewmemory) {
-                // the memory viewer banning the input may break some programs
-                // however allowing input with the memory viewer would make the
-                // memory viewer look ugly... not sure how to fix this. FIXME
-                Scanner scan = new Scanner(System.in);
-                System.out.print("\n> ");
-                char val = scan.nextLine().charAt(0);
-                scan.close();
-                this.cells.set(this.pointer, (int)val);
-                System.out.println();
+        while (i < this.code_blocks.size()) {
+            int block_size = this.code_blocks.get(i).length();
+            char c = this.code_blocks.get(i).charAt(0);
+            switch (c) {
+                case '>':
+                    this.pointer += block_size;
+                    while (this.pointer >= this.cells.size())
+                        this.cells.add(0);
+                    break;
+    
+                case '<':
+                    this.pointer -= block_size;
+                    if (this.pointer <= -1)
+                        throw new IndexOutOfBoundsException("Pointer went out of bounds");
+                    break;
+    
+                case '+':
+                    this.cells.set(this.pointer, (this.cells.get(this.pointer) + block_size) % 256);
+                    break;
+    
+                case '-':
+                    this.cells.set(this.pointer, this.cells.get(this.pointer) - block_size);
+                    while (this.cells.get(this.pointer) <= -1) {
+                        int val = this.cells.get(this.pointer);
+                        this.cells.set(this.pointer, (val + 256));
+                    }
+                    this.cells.set(this.pointer, (this.cells.get(this.pointer) % 256));
+                    break;
+    
+                case '[':
+                    if (this.cells.get(this.pointer) == 0) {
+                        i = bracket_indexes.get(i);
+                    }
+                    break;
+    
+                case ']': 
+                    if (this.cells.get(this.pointer) != 0) {
+                        i = bracket_indexes.get(i);
+                    }
+                    break;
+    
+                case '.':
+                    char out = (char) (int) this.cells.get(this.pointer);
+                    for (int j = 0; j < block_size; j++) {
+                        if (!this.viewmemory)
+                            System.out.print(out); // casting Integer to int to char :tf:
+                        this.output += Character.toString(out);
+                    }
+                    break;
+    
+                case ',':
+                    // I chose to ignore the fact that the memory viewer
+                    // would look ugly if we ignore the input. After the input,
+                    // I just clear out the screen by printing a couple hundred newlines.
+                    // /shrug untested
+                    Scanner scan = new Scanner(System.in);
+                    for (int j = 0; j < block_size; j++) {
+                        System.out.print("\n> ");
+                        char val = scan.nextLine().charAt(0);
+                        scan.close();
+                        this.cells.set(this.pointer, (int) val);
+                    }
+                    System.out.print(String.format("%0" + 100 + "d", 0).replace("0", "\n"));
+                    break;
             }
 
             i++;
 
-            if(this.viewmemory)
+            if (this.viewmemory)
                 viewmemory(wait);
         }
+        
+        // save the entire final memory to a file        
+        File finalmemory = new File("finalmem.txt");
+        finalmemory.createNewFile(); // i know im ignoring the result, but idc about the result
+        FileWriter writer = new FileWriter(finalmemory);
+        for (int j = 0; j < this.cells.size(); j++) {
+            String v = Integer.toHexString(this.cells.get(j));
+            if (v.length() == 1)
+                v = "0" + v;
+            if (j == this.pointer)
+                v = "[" + v + "]";
+            else
+                v = " " + v + " ";
 
-        if(this.viewmemory) {
-            File finalmemory = new File("finalmem.txt");
-            finalmemory.createNewFile(); // i know im ignoring the result, but idc about the result
-            FileWriter writer = new FileWriter(finalmemory);
-            for (int j = 0; j < this.cells.size(); j++) {
-                String v = Integer.toHexString(this.cells.get(j));
-                if(v.length() == 1) v = "0" + v;
-                if (j == this.pointer) 
-                    v = ">" + v + "<";
-                else
-                    v = " " + v + " ";
-                
-                writer.write(v);
-            }
-            writer.close();
+            writer.write(v);
         }
+        writer.close();
+        
+
+        // save the output to a file
+        File outFile = new File("output.txt");
+        outFile.createNewFile();
+        FileWriter outFileWriter = new FileWriter(outFile);
+        outFileWriter.write(this.output);
+        outFileWriter.close();
     }
     
     // yes, this goes unused, but I like having defaults
